@@ -4,7 +4,7 @@ use Net::WebSocket::Server;
 my @conns;
  
 Net::WebSocket::Server->new(
-    listen => 8080,
+    listen => 3000,
     on_connect => sub {
         my ($serv, $conn) = @_;
         push @conns, $conn;

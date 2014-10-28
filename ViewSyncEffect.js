@@ -18,8 +18,8 @@ THREE.ViewSyncEffect = function ( renderer ) {
     //var _websocket = viewsync.socket;
 	//var _websocket = new WebSocket( "ws://192.168.0.233:3000/relay" ); // arg?
 
-    var _extraInfo = [];
-    var _extraCallback;         // callback used to process extraInfo data
+	var _extraInfo = [];
+	var _extraCallback;         // callback used to process extraInfo data
 
 	var _position = new THREE.Vector3();
 	var _quaternion = new THREE.Quaternion();

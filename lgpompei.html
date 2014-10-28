@@ -93,12 +93,6 @@
 		}
 		
 		function initThree(){
-			stats = new Stats();
-			stats.domElement.style.position = 'absolute';
-			stats.domElement.style.top = '0px';
-			stats.domElement.style.margin = '5px';
-			document.body.appendChild( stats.domElement );
-		
 			scene = new THREE.Scene();
 			camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 100000);
 
@@ -109,6 +103,14 @@
 
 			viewSyncEffect = new THREE.ViewSyncEffect( renderer );
 			viewSyncEffect.setSize( window.innerWidth, window.innerHeight );
+
+			if (!viewSyncEffect.isSlave()) {
+				stats = new Stats();
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.top = '0px';
+				stats.domElement.style.margin = '5px';
+				document.body.appendChild( stats.domElement );
+			}
 
 			viewSyncEffect.setExtraCallback( function(extra) {
 				// XXX extra is an array. I need to loop through everything in it.
@@ -161,6 +163,7 @@
 			camera.position.y = 10;
 			camera.position.x = 15;
 			controls = new THREE.OrbitControls(camera, renderer.domElement);
+			//controls = new THREE.OrbitControls(camera, renderer.domElement);
 			controls.target.set( 0, 3, 0 );
 			camera.lookAt(controls.target);
 			
@@ -211,16 +214,20 @@
 			//renderer.render( scene, camera ); // Alf use viewsync render
 			viewSyncEffect.render( scene, camera ); // Alf
 			
-			document.getElementById("lblNumVisibleNodes").innerHTML = "visible nodes: " + numVisibleNodes;
-			document.getElementById("lblNumVisiblePoints").innerHTML = "visible points: " + Potree.utils.addCommas(numVisiblePoints);
-			
-			stats.update();
+			if (!viewSyncEffect.isSlave()) {
+				document.getElementById("lblNumVisibleNodes").innerHTML = "visible nodes: " + numVisibleNodes;
+				document.getElementById("lblNumVisiblePoints").innerHTML = "visible points: " + Potree.utils.addCommas(numVisiblePoints);
+				
+				stats.update();
+			}
 			controls.update(0.1);
 			
 		};
 		
 		initThree();
-		initGUI();
+		if (!viewSyncEffect.isSlave()) {
+			initGUI();
+		}
 		render();
 		
 	</script>

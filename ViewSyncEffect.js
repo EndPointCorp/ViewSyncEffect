@@ -13,7 +13,7 @@ THREE.ViewSyncEffect = function ( renderer ) {
 
 	// internals
 
-	var _websocket = new WebSocket( "ws://lg-head:3000/echo" ); // arg?
+	var _websocket = new WebSocket( "ws://localhost:3000/echo" ); // arg?
     //var viewsync = io.connect('ws://localhost:8080/echo');
     //var _websocket = viewsync.socket;
 	//var _websocket = new WebSocket( "ws://192.168.0.233:3000/relay" ); // arg?
@@ -115,7 +115,7 @@ THREE.ViewSyncEffect = function ( renderer ) {
 
 			camera.matrixWorld.decompose( _position, _quaternion, _scale );
 			var pov = { p:_position, q:_quaternion, extra: _extraInfo };
-                        var povMesg = JSON.stringify( pov );
+            var povMesg = JSON.stringify( pov );
 			//console.log("pov:"+povMesg);
 
 			if ( povMesg != _lastMesg && _wsConnected ) { // only if new data and connected
@@ -131,6 +131,13 @@ THREE.ViewSyncEffect = function ( renderer ) {
 
 		cameraViewSync.projectionMatrix = camera.projectionMatrix;
 		cameraViewSync.position.copy( _position ); // for slave can we do these in ws.onmessage?
+
+        // Is this a bug in Three.js Quaternions, or something, that I have to do this?
+        _quaternion.x = _quaternion._x;
+        _quaternion.y = _quaternion._y;
+        _quaternion.z = _quaternion._z;
+        _quaternion.w = _quaternion._w;
+
 		cameraViewSync.quaternion.copy( _quaternion );
 
 		if (_yawRads != 0 ) {

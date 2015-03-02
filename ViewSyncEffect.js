@@ -140,13 +140,13 @@ THREE.ViewSyncEffect = function ( renderer ) {
 
 		cameraViewSync.quaternion.copy( _quaternion );
 
+		cameraViewSync.updateMatrixWorld();
+
 		if (_yawRads != 0 ) {
 			cameraViewSync.rotateOnAxis( _yawAxis, _yawRads );
 		}
 		// if (_pitchRads != 0 ) { }
 		// if (_rollRads != 0 ) { }
-
-		cameraViewSync.updateMatrixWorld();
 
 		//renderer.clear(); // not needed?
 

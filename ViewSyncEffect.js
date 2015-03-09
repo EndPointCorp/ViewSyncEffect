@@ -54,16 +54,20 @@ THREE.ViewSyncEffect = function ( renderer ) {
 	}
 
 	// set up websocket callbacks
-	if ( _slave ) { // only slaves need to listen for inbound websocket messages
-		_websocket.onmessage = function ( evt ) {
-			//console.log("evt:"+evt.data);
-			var camData = JSON.parse( evt.data );
-			_position = camData.data.p;
-			_quaternion = camData.data.q;
-            if ( camData.data.extra.length > 0 && _extraCallback !== undefined ) {
-                _extraCallback( camData.data.extra );
+    _websocket.onmessage = function ( evt ) {
+        //console.log("evt:"+evt.data);
+        var camData = JSON.parse( evt.data );
+        if ( _slave ) { // only slaves need to change their position based on incoming websocket data
+            if (typeof camData.data.p !== 'undefined' ) {
+                _position = camData.data.p;
+            }
+            if (typeof camData.data.q !== 'undefined' ) {
+                _quaternion = camData.data.q;
             }
 		}
+        if ( camData.data.extra.length > 0 && typeof(_extraCallback) !== undefined ) {
+            _extraCallback( camData.data.extra );
+        }
 	}
 	_websocket.onopen = function () {
 		_wsConnected = true;

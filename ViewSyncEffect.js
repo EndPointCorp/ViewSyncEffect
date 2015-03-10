@@ -11,6 +11,17 @@ var cameraViewSync = new THREE.PerspectiveCamera();
 
 THREE.ViewSyncEffect = function ( renderer ) {
 
+    // Thanks to stackoverflow, user Briguy37
+    function generateUUID() {
+        var d = performance.now();
+        var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = (d + Math.random()*16)%16 | 0;
+            d = Math.floor(d/16);
+            return (c=='x' ? r : (r&0x3|0x8)).toString(16);
+        });
+        return uuid;
+    }
+
 	// internals
 
 	var _websocket = new WebSocket( "ws://" + window.location.host + "/websocket" ); // arg?
@@ -37,6 +48,8 @@ THREE.ViewSyncEffect = function ( renderer ) {
 	var _fov = 0.0;
 	var _lastMesg = "";
 
+    var _src_id = generateUUID();
+
 	// parse URL parameters
 	var _qryArgs = _getQueryStringVars();
 
@@ -57,6 +70,12 @@ THREE.ViewSyncEffect = function ( renderer ) {
     _websocket.onmessage = function ( evt ) {
         //console.log("evt:"+evt.data);
         var camData = JSON.parse( evt.data );
+
+        // Ignore messages we sent, that are reflected back at us
+        if (camData.data.src === _src_id) {
+            return;
+        }
+
         if ( _slave ) { // only slaves need to change their position based on incoming websocket data
             if (typeof camData.data.p !== 'undefined' ) {
                 _position = camData.data.p;
@@ -65,6 +84,8 @@ THREE.ViewSyncEffect = function ( renderer ) {
                 _quaternion = camData.data.q;
             }
 		}
+
+        // Everyone, including masters, wants to see extraData stuff
         if ( camData.data.extra.length > 0 && typeof(_extraCallback) !== undefined ) {
             _extraCallback( camData.data.extra );
         }
@@ -99,7 +120,7 @@ THREE.ViewSyncEffect = function ( renderer ) {
 	};
 
     this.extraInfo = function ( object ) {
-        _extraInfo.push( object );
+        _extraInfo = object;
     }
 
 	this.isSlave = function () {
@@ -115,13 +136,13 @@ THREE.ViewSyncEffect = function ( renderer ) {
 		if ( !_slave ) { // get & send camera position & quaternion via websocket
 
 			camera.matrixWorld.decompose( _position, _quaternion, _scale );
-			var pov = { 'type' : 'pano_viewsync', 'data' : { p:_position, q:_quaternion, extra: _extraInfo }};
+			var pov = { 'type' : 'pano_viewsync', 'data' : { 'src' : _src_id, p:_position, q:_quaternion, extra: _extraInfo }};
             var povMesg = JSON.stringify( pov );
 			//console.log("pov:"+povMesg);
 
 			if ( povMesg != _lastMesg && _wsConnected ) { // only if new data and connected
                 _websocket.send(povMesg);
-                _extraInfo = [];
+                _extraInfo = undefined;
 				_lastMesg = povMesg;
 			}
 		}

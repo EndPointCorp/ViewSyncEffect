@@ -28,6 +28,7 @@ THREE.ViewSyncEffect = function ( renderer ) {
 
 	var _extraInfo = [];
 	var _extraCallback;         // callback used to process extraInfo data
+    var _navigationCallback;    // callback for navigation packets
 
 	var _position = new THREE.Vector3();
 	var _quaternion = new THREE.Quaternion();
@@ -66,6 +67,10 @@ THREE.ViewSyncEffect = function ( renderer ) {
 		console.log( "_fov:"+_fov );
 	}
 
+    var handleNavigation = function(sp) {
+
+    }
+
 	// set up websocket callbacks
     _websocket.onmessage = function ( evt ) {
         //console.log("evt:"+evt.data);
@@ -84,9 +89,13 @@ THREE.ViewSyncEffect = function ( renderer ) {
                 _quaternion = camData.data.q;
             }
 		}
+        else if (camData.type === 'navigation' && typeof(_navigationCallback) !== 'undefined') { // only masters need to pay attention to the spacenav
+            _navigationCallback(camData);
+            return;
+        }
 
         // Everyone, including masters, wants to see extraData stuff
-        if ( camData.data.extra.length > 0 && typeof(_extraCallback) !== undefined ) {
+        if ( typeof(camData.data.extra) !== 'undefined' && typeof(_extraCallback) !== undefined ) {
             _extraCallback( camData.data.extra );
         }
 	}
@@ -101,6 +110,11 @@ THREE.ViewSyncEffect = function ( renderer ) {
     // Sets a callback function to handle extraInfo data on the slave
     this.setExtraCallback = function (a) {
         _extraCallback = a;
+    }
+
+    // Sets a callback function to handle navigation data on the master
+    this.setNavigationCallback = function (a) {
+        _navigationCallback = a;
     }
 
 	this.setSize = function ( width, height ) {

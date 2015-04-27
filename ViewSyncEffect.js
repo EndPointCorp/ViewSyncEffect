@@ -44,31 +44,41 @@ THREE.ViewSyncEffect = function ( renderer ) {
 
 	// initialization
 	var _wsConnected = false;
-	var _slave = false;
-	var _yaw = 0.0; var _pitch = 0.0; var _roll = 0.0;
-	var _fov = 0.0;
+    var _config = {
+        slave: false,
+        yaw: 0.0,
+        pitch: 0.0,
+        roll: 0.0,
+        fov: 0.0
+    }
 	var _lastMesg = "";
 
     var _src_id = generateUUID();
 
-	// parse URL parameters
-	var _qryArgs = _getQueryStringVars();
+    this.configureFromURL = function() {
+        // parse URL parameters
+        var _qryArgs = _getQueryStringVars();
 
-	if ( _qryArgs[ "slave" ] ) { _slave = true; }
-	if ( _qryArgs[ "yaw" ] ) {
-		_yaw = _qryArgs[ "yaw" ];
-		console.log( "_yaw:"+_yaw );
-	}
-	if ( _qryArgs[ "pitch" ] ) { } // eventually also do pitch/roll
-	if ( _qryArgs[ "roll" ] ) { }
+        if ( _qryArgs[ "slave" ] ) { _config.slave = true; }
+        if ( _qryArgs[ "yaw" ] ) {
+            _config.yaw = _qryArgs[ "yaw" ];
+            console.log( "_config.yaw:"+_config.yaw );
+        }
+        if ( _qryArgs[ "pitch" ] ) { } // eventually also do pitch/roll
+        if ( _qryArgs[ "roll" ] ) { }
 
-	if ( _qryArgs[ "fov" ] ) {
-		_fov = _qryArgs[ "fov" ];
-		console.log( "_fov:"+_fov );
-	}
+        if ( _qryArgs[ "fov" ] ) {
+            _config.fov = _qryArgs[ "fov" ];
+            console.log( "_config.fov:"+_config.fov );
+        }
+    }
 
-    var handleNavigation = function(sp) {
+    this.configure = function(config) {
+        var fields = ['pitch', 'roll', 'yaw', 'slave'];
 
+        for (var att in config) {
+            _config[att] = config[att]
+        }
     }
 
 	// set up websocket callbacks
@@ -81,7 +91,7 @@ THREE.ViewSyncEffect = function ( renderer ) {
             return;
         }
 
-        if ( _slave ) { // only slaves need to change their position based on incoming websocket data
+        if ( _config.slave ) { // only slaves need to change their position based on incoming websocket data
             if (typeof camData.data.p !== 'undefined' ) {
                 _position = camData.data.p;
             }
@@ -101,7 +111,7 @@ THREE.ViewSyncEffect = function ( renderer ) {
 	}
 	_websocket.onopen = function () {
 		_wsConnected = true;
-		// if ( _slave ) { _websocket.send( "resend" ); }
+		// if ( _config.slave ) { _websocket.send( "resend" ); }
 	}
 	_websocket.onclose = function () { _wsConnected = false; }
 
@@ -121,11 +131,11 @@ THREE.ViewSyncEffect = function ( renderer ) {
 
 		renderer.setSize( width, height );
 
-		if ( _slave ) { // I don't understand but it works!
-			_yawRads = THREE.Math.degToRad( _yaw * width / height );
- 		} else {
- 			_yawRads = THREE.Math.degToRad( _yaw );
- 		}
+//		if ( _config.slave ) { // I don't understand but it works!
+			_yawRads = THREE.Math.degToRad( _config.yaw * width / height );
+// 		} else {
+// 			_yawRads = THREE.Math.degToRad( _config.yaw );
+// 		}
 	};
 
 	this.setClearColor = function ( color ) {
@@ -138,7 +148,7 @@ THREE.ViewSyncEffect = function ( renderer ) {
     }
 
 	this.isSlave = function () {
-		return _slave;
+		return _config.slave;
 	};
 
 	this.render = function ( scene, camera ) {
@@ -147,7 +157,7 @@ THREE.ViewSyncEffect = function ( renderer ) {
 
 		if ( camera.parent === undefined ) camera.updateMatrixWorld();
 	
-		if ( !_slave ) { // get & send camera position & quaternion via websocket
+		if ( !_config.slave ) { // get & send camera position & quaternion via websocket
 
 			camera.matrixWorld.decompose( _position, _quaternion, _scale );
 			var pov = { 'type' : 'pano_viewsync', 'data' : { 'src' : _src_id, p:_position, q:_quaternion, extra: _extraInfo }};
@@ -161,7 +171,7 @@ THREE.ViewSyncEffect = function ( renderer ) {
 			}
 		}
 
-		if ( _fov != 0) { camera.fov = _fov; } // if set, always overwrite fov
+		if ( _config.fov != 0) { camera.fov = _config.fov; } // if set, always overwrite fov
 
 		camera.updateProjectionMatrix();
 

@@ -87,7 +87,7 @@ THREE.ViewSyncEffect = function ( renderer ) {
         var camData = JSON.parse( evt.data );
 
         // Ignore messages we sent, that are reflected back at us
-        if (camData.data.src === _src_id) {
+        if (camData.data.hasOwnProperty('src') && camData.data.src === _src_id) {
             return;
         }
 

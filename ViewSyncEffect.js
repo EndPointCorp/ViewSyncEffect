@@ -131,11 +131,9 @@ THREE.ViewSyncEffect = function ( renderer ) {
 
 		renderer.setSize( width, height );
 
-//		if ( _config.slave ) { // I don't understand but it works!
-			_yawRads = THREE.Math.degToRad( _config.yaw * width / height );
-// 		} else {
-// 			_yawRads = THREE.Math.degToRad( _config.yaw );
-// 		}
+        _yawRads   = THREE.Math.degToRad( _config.yaw   * width / height );
+        _rollRads  = THREE.Math.degToRad( _config.roll  * width / height );
+        _pitchRads = THREE.Math.degToRad( _config.pitch * width / height );
 	};
 
 	this.setClearColor = function ( color ) {
@@ -191,8 +189,12 @@ THREE.ViewSyncEffect = function ( renderer ) {
 		if (_yawRads != 0 ) {
 			cameraViewSync.rotateOnAxis( _yawAxis, _yawRads );
 		}
-		// if (_pitchRads != 0 ) { }
-		// if (_rollRads != 0 ) { }
+		if (_rollRads != 0 ) {
+			cameraViewSync.rotateOnAxis( _rollAxis, _rollRads );
+		}
+		if (_pitchRads != 0 ) {
+			cameraViewSync.rotateOnAxis( _pitchAxis, _pitchRads );
+		}
 
 		//renderer.clear(); // not needed?
 

@@ -24,7 +24,7 @@ THREE.ViewSyncEffect = function ( renderer ) {
 
 	// internals
 
-	var _websocket = new WebSocket( "ws://" + window.location.host + "/websocket" ); // arg?
+	var _websocket = new WebSocket( "ws://localhost:3000/" ); // arg?
 
 	var _extraInfo = [];
 	var _extraCallback;         // callback used to process extraInfo data

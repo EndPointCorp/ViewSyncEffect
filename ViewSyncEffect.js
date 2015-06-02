@@ -24,7 +24,15 @@ THREE.ViewSyncEffect = function ( renderer ) {
 
 	// internals
 
-	var _websocket = new WebSocket( "ws://localhost:3000/" ); // arg?
+   // var _websocket = io.connect( "http://lg-head:8086/" ); // arg?
+    var multiaxis = io.connect('/multiaxis');
+    multiaxis.on('state', function(abs) {
+        if (typeof(_navigationCallback) !== 'undefined') { // only masters need to pay attention to the spacenav
+            console.log(abs);
+            _navigationCallback(abs);
+        }
+    });
+    var _websocket = io.connect('/');
 
 	var _extraInfo = [];
 	var _extraCallback;         // callback used to process extraInfo data
@@ -79,41 +87,44 @@ THREE.ViewSyncEffect = function ( renderer ) {
         for (var att in config) {
             _config[att] = config[att]
         }
+        console.log(_config);
     }
 
 	// set up websocket callbacks
-    _websocket.onmessage = function ( evt ) {
-        //console.log("evt:"+evt.data);
-        var camData = JSON.parse( evt.data );
+	_websocket.on('connect', function () {
+		_wsConnected = true;
+    _websocket.on('pano_viewsync', function ( evt ) {
+        //console.log("evt:"+evt);
+        var camData = evt;
 
         // Ignore messages we sent, that are reflected back at us
-        if (camData.data.hasOwnProperty('src') && camData.data.src === _src_id) {
+        if (camData.hasOwnProperty('src') && camData.src === _src_id) {
             return;
         }
 
         if ( _config.slave ) { // only slaves need to change their position based on incoming websocket data
-            if (typeof camData.data.p !== 'undefined' ) {
-                _position = camData.data.p;
+            if (typeof camData.p !== 'undefined' ) {
+                _position = camData.p;
             }
-            if (typeof camData.data.q !== 'undefined' ) {
-                _quaternion = camData.data.q;
+            if (typeof camData.q !== 'undefined' ) {
+                _quaternion = camData.q;
             }
 		}
+        /*
         else if (camData.type === 'navigation' && typeof(_navigationCallback) !== 'undefined') { // only masters need to pay attention to the spacenav
             _navigationCallback(camData);
             return;
         }
+        */
 
         // Everyone, including masters, wants to see extraData stuff
-        if ( typeof(camData.data.extra) !== 'undefined' && typeof(_extraCallback) !== undefined ) {
-            _extraCallback( camData.data.extra );
+        if ( typeof(camData.extra) !== 'undefined' && typeof(_extraCallback) !== undefined ) {
+            _extraCallback( camData.extra );
         }
-	}
-	_websocket.onopen = function () {
-		_wsConnected = true;
+	});
 		// if ( _config.slave ) { _websocket.send( "resend" ); }
-	}
-	_websocket.onclose = function () { _wsConnected = false; }
+	});
+	_websocket.on('disconnect', function () { _wsConnected = false; });
 
 	renderer.autoClear = false;
 
@@ -159,11 +170,11 @@ THREE.ViewSyncEffect = function ( renderer ) {
 
 			camera.matrixWorld.decompose( _position, _quaternion, _scale );
 			var pov = { 'type' : 'pano_viewsync', 'data' : { 'src' : _src_id, p:_position, q:_quaternion, extra: _extraInfo }};
-            var povMesg = JSON.stringify( pov );
+            var povMesg = pov.data;
 			//console.log("pov:"+povMesg);
 
 			if ( povMesg != _lastMesg && _wsConnected ) { // only if new data and connected
-                _websocket.send(povMesg);
+                _websocket.emit('pano_viewsync', povMesg);
                 _extraInfo = undefined;
 				_lastMesg = povMesg;
 			}

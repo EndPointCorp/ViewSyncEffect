@@ -24,7 +24,9 @@ THREE.ViewSyncEffect = function ( renderer ) {
 
 	// internals
 
-	var _websocket = new WebSocket( "ws://localhost:3000/" ); // arg?
+	//var _websocket = new WebSocket( "ws://localhost:3000/" ); // arg?
+    var viewsync = io.connect('/viewsync');
+    //var viewsync = io.connect(window.location.host );
 
 	var _extraInfo = [];
 	var _extraCallback;         // callback used to process extraInfo data
@@ -82,9 +84,10 @@ THREE.ViewSyncEffect = function ( renderer ) {
     }
 
 	// set up websocket callbacks
-    _websocket.onmessage = function ( evt ) {
+    //viewsync.on( 'message', function ( evt ) {
+    viewsync.on( 'sync pov', function ( evt ) {
         //console.log("evt:"+evt.data);
-        var camData = JSON.parse( evt.data );
+        var camData = JSON.parse( evt );
 
         // Ignore messages we sent, that are reflected back at us
         if (camData.data.hasOwnProperty('src') && camData.data.src === _src_id) {
@@ -108,12 +111,12 @@ THREE.ViewSyncEffect = function ( renderer ) {
         if ( typeof(camData.data.extra) !== 'undefined' && typeof(_extraCallback) !== undefined ) {
             _extraCallback( camData.data.extra );
         }
-	}
-	_websocket.onopen = function () {
-		_wsConnected = true;
-		// if ( _config.slave ) { _websocket.send( "resend" ); }
-	}
-	_websocket.onclose = function () { _wsConnected = false; }
+	});
+  	viewsync.on('connect', function () {
+  		_wsConnected = true;
+  		// if ( _config.slave ) { _websocket.send( "resend" ); }
+  	});
+    viewsync.on('disconnect', function () { _wsConnected = false; });
 
 	renderer.autoClear = false;
 
@@ -163,7 +166,7 @@ THREE.ViewSyncEffect = function ( renderer ) {
 			//console.log("pov:"+povMesg);
 
 			if ( povMesg != _lastMesg && _wsConnected ) { // only if new data and connected
-                _websocket.send(povMesg);
+                viewsync.emit('pov', povMesg);
                 _extraInfo = undefined;
 				_lastMesg = povMesg;
 			}

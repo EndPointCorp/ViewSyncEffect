@@ -85,6 +85,7 @@ THREE.ViewSyncEffect = function ( renderer ) {
     _websocket.onmessage = function ( evt ) {
         //console.log("evt:"+evt.data);
         var camData = JSON.parse( evt.data );
+        camData = camData.data;
 
         // Ignore messages we sent, that are reflected back at us
         if (camData.data.hasOwnProperty('src') && camData.data.src === _src_id) {
